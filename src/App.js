@@ -2,18 +2,20 @@ import React from 'react';
 import { HashRouter as Router, Route, Link } from 'react-router-dom';
 
 import Map2D from './views/Map2D';
+import DiscreteMap2D from './views/DiscreteMap2D';
 
 
 const routes = [
   { path: "/", component: Home },
   { path: "/map2d", component: Map2D },
+  { path: "/discrete2d", component: DiscreteMap2D },
 ];
 
 function Home() {
   return (
     <ul>
       {routes.map((r, i) => (
-        <li>
+        <li key={i}>
           <Link to={r.path}>{r.component.name}</Link>
         </li>
       ))}

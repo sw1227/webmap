@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-import { LatLon, PixelCoord, Point } from '../common/geo';
+import { LatLon, PixelCoord, Point, TileCoord } from '../common/geo';
 
 
 export default function DiscreteMap2D() {
@@ -25,13 +25,32 @@ export default function DiscreteMap2D() {
     const nw = position.getPixel(zoom);
     // South East
     const se = new PixelCoord(
-      nw.x + mapConfig.size.width,
-      nw.y + mapConfig.size.height,
+      nw.x + mapConfig.size.width - 1,
+      nw.y + mapConfig.size.height - 1,
       nw.z
-    )
-    console.log("NW", nw.getTile(), nw.getPixelInTile());
-    console.log("SE", se.getTile(), se.getPixelInTile());
-    // TODO: Get list of tiles and their positions for drawing
+    );
+    const nwTile = nw.getTile();
+    const seTile = se.getTile();
+    const nwOffset = nw.getPixelInTile();
+
+    // List all tiles in the view for drawing
+    const tiles = []
+    for (let x = nwTile.x; x <= seTile.x; x++) {
+      for (let y = nwTile.y; y<= seTile.y; y++) {
+        // Push tile coordinate and start postition (left upper)
+        tiles.push({
+          tile: new TileCoord(zoom, x, y),
+          start: {
+            x: 256 * (x - nwTile.x) - nwOffset.x,
+            y: 256 * (y - nwTile.y) - nwOffset.y
+          }
+        });
+      }
+    }
+    console.log(tiles);
+    console.log("NW", nwTile, nwOffset);
+    console.log("SE", seTile);
+
   }, [zoom, position])
 
   return (

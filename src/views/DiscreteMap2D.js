@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 
-import { LatLon, PixelCoord, Point, TileCoord } from '../common/geo';
+import { LatLon, Point } from '../common/geo';
+import SimpleMap from '../common/map2D';
 
 
 export default function DiscreteMap2D() {
@@ -19,51 +20,42 @@ export default function DiscreteMap2D() {
   const nabewari = new LatLon(35.4389735, 139.1375592);
   const [position, setPosition] = useState(new Point(nabewari, mapConfig.zoomMax));
   const [zoom, setZoom] = useState(mapConfig.initialZoom);
+  const [map, setMap] = useState();
 
+  // Callback functions
+  const incrementZoom = () => {
+    if (zoom < mapConfig.zoomMax) setZoom(z => z + 1);
+  };
+  const decrementZoom = () => {
+    if (zoom > mapConfig.zoomMin) setZoom(z => z - 1);
+  };
+  const shiftPosition = (x, y) => () => {
+    setPosition(new Point(position.shift(x, y, zoom)));
+  };
+
+  // Create map instance when elements are loaded
   useEffect(() => {
-    // North West
-    const nw = position.getPixel(zoom);
-    // South East
-    const se = new PixelCoord(
-      nw.x + mapConfig.size.width - 1,
-      nw.y + mapConfig.size.height - 1,
-      nw.z
-    );
-    const nwTile = nw.getTile();
-    const seTile = se.getTile();
-    const nwOffset = nw.getPixelInTile();
+    setMap(new SimpleMap("#map", mapConfig.size, position, zoom));
+  }, []);
 
-    // List all tiles in the view for drawing
-    const tiles = []
-    for (let x = nwTile.x; x <= seTile.x; x++) {
-      for (let y = nwTile.y; y<= seTile.y; y++) {
-        // Push tile coordinate and start postition (left upper)
-        tiles.push({
-          tile: new TileCoord(zoom, x, y),
-          start: {
-            x: 256 * (x - nwTile.x) - nwOffset.x,
-            y: 256 * (y - nwTile.y) - nwOffset.y
-          }
-        });
-      }
+  // Draw
+  useEffect(() => {
+    if (typeof map !== "undefined") {
+      map.draw(position, zoom);
     }
-    console.log(tiles);
-    console.log("NW", nwTile, nwOffset);
-    console.log("SE", seTile);
-
-  }, [zoom, position])
+  }, [zoom, position, map], () => { if (map) map.destroy() });
 
   return (
     <div>
       <canvas id="map" width={`${mapConfig.size.width}px`} height={`${mapConfig.size.height}px`} style={{ border: "solid", margin: "20px" }} />
       <div>zoom = {zoom}</div>
-      <button onClick={() => { if (zoom < mapConfig.zoomMax) setZoom(z => z + 1) }}>+</button>
-      <button onClick={() => { if (zoom > mapConfig.zoomMin) setZoom(z => z - 1) }}>-</button>
+      <button onClick={incrementZoom}>+</button>
+      <button onClick={decrementZoom}>-</button>
       <br />
-      <button onClick={() => { setPosition(new Point(position.shift(100, 0, zoom))) }}>→</button>
-      <button onClick={() => { setPosition(new Point(position.shift(-100, 0, zoom))) }}>←</button>
-      <button onClick={() => { setPosition(new Point(position.shift(0, 100, zoom))) }}>↑</button>
-      <button onClick={() => { setPosition(new Point(position.shift(0, -100, zoom))) }}>↓</button>
+      <button onClick={shiftPosition(-100, 0)}>←</button>
+      <button onClick={shiftPosition(+100, 0)}>→</button>
+      <button onClick={shiftPosition(0, -100)}>↑</button>
+      <button onClick={shiftPosition(0, +100)}>↓</button>
     </div>
   );
 }
